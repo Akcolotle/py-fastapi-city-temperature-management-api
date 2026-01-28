@@ -1,105 +1,166 @@
 # FastAPI City Temperature Management API
 
-This project implements:
+This project is a FastAPI application that manages cities and stores historical temperature data for them.  
+It consists of two main parts:
 
-- **City CRUD API** (`/cities`)
-- **Temperature API**
-  - `POST /temperatures/update`: asynchronously fetches current temperatures for all cities and stores them
-  - `GET /temperatures`: returns temperature history (optionally filtered by `city_id`)
+1. **City CRUD API** – for managing cities.
+2. **Temperature API** – for asynchronously fetching and storing temperature data for all cities.
 
-## Tech stack
+---
 
-- FastAPI
-- SQLAlchemy 2.0 (async)
-- SQLite + aiosqlite driver
-- httpx for async HTTP calls
+## Features
 
-## Project structure
+### City API
+- Create a city
+- List all cities
+- Retrieve a city by ID
+- Update city details
+- Delete a city
 
-```
+### Temperature API
+- Fetch current temperature for **all cities** asynchronously and store it
+- Retrieve temperature history
+- Filter temperature history by `city_id`
+
+---
+
+## Tech Stack
+
+- **FastAPI**
+- **SQLAlchemy 2.0 (async)**
+- **SQLite** with `aiosqlite`
+- **httpx** for async HTTP requests
+- **Pydantic v2**
+- **Uvicorn**
+
+---
+
+## Project Structure
+
 app/
-  main.py
-  core/
-    config.py
-  db/
-    session.py
-    base.py
-  models/
-    city.py
-    temperature.py
-  schemas/
-    city.py
-    temperature.py
-  crud/
-    city.py
-    temperature.py
-  api/
-    routers/
-      cities.py
-      temperatures.py
+├── main.py
+├── core/
+│ └── config.py
+├── db/
+│ ├── base.py
+│ └── session.py
+├── models/
+│ ├── city.py
+│ └── temperature.py
+├── schemas/
+│ ├── city.py
+│ └── temperature.py
+├── crud/
+│ ├── city.py
+│ └── temperature.py
+└── api/
+└── routers/
+├── cities.py
+└── temperatures.py
 tests/
-```
 
-## How to run
 
-### 1) Create venv and install deps
+---
 
-Using `pip`:
+## How to Run the Application
 
+### 1. Create virtual environment and install dependencies
+
+#### Using `pip`
 ```bash
 python -m venv .venv
-# Windows:
+
+# Windows
 .venv\Scripts\activate
-# macOS/Linux:
-# source .venv/bin/activate
+
+# macOS / Linux
+source .venv/bin/activate
 
 pip install -r requirements.txt
-```
 
-Or using `uv`:
+Using uv
 
-```bash
 uv venv
 uv pip install -r requirements.txt
-```
 
-### 2) Configure environment
+2. Configure environment variables
 
-Create `.env` in the project root:
+Create a .env file in the project root:
 
-```env
 DATABASE_URL=sqlite+aiosqlite:///./app.db
 OPEN_METEO_TIMEOUT_SECONDS=10
-```
 
-### 3) Start API
+3. Start the API
 
-```bash
 uvicorn app.main:app --reload
-```
 
-Open docs: `http://127.0.0.1:8000/docs`
+Open Swagger UI:
 
-## Design choices
+http://127.0.0.1:8000/docs
 
-- **Async SQLAlchemy** (`AsyncSession`) is used everywhere.
-- **Dependency injection**: `get_db()` yields an `AsyncSession` for endpoints.
-- **Temperature provider**: `Open-Meteo` is used because it is free and does not require an API key.
-  - We store `city.latitude` / `city.longitude` to fetch temperature reliably.
-  - If you don't know coordinates, you can extend the app with a geocoding step (not included here).
+API Overview
+City endpoints
 
-## Assumptions / simplifications
+    POST /cities
 
-- Each city record stores `latitude` and `longitude` inside `additional_info` (or better: dedicated fields).
-  In this implementation we model them as explicit columns for correctness.
-- Temperature is fetched as **current temperature** (`current.temperature_2m`) from Open-Meteo.
+    GET /cities
 
-## Example workflow
+    GET /cities/{city_id}
 
-1. `POST /cities` with name + lat/lon
-2. `POST /temperatures/update` to fetch temperatures for all cities
-3. `GET /temperatures` or `GET /temperatures?city_id=1` to see history
+    PUT /cities/{city_id}
 
-## Notes
+    DELETE /cities/{city_id}
 
-SQLite is fine for the task; for production you'd typically migrate to Postgres and add Alembic migrations.
+Temperature endpoints
+
+    POST /temperatures/update
+
+    GET /temperatures
+
+    GET /temperatures?city_id={city_id}
+
+Design Choices
+
+    Async SQLAlchemy is used throughout the application to ensure non-blocking database access.
+
+    Dependency Injection is implemented using FastAPI dependencies (get_db) to manage AsyncSession lifecycle.
+
+    SQLite was chosen for simplicity and ease of setup, as required by the task.
+
+    Open-Meteo API is used as a temperature provider because:
+
+        it is free,
+
+        does not require an API key,
+
+        provides reliable current temperature data.
+
+    Each city stores latitude and longitude as explicit fields, which allows accurate temperature fetching.
+
+Assumptions and Simplifications
+
+    Cities must have latitude and longitude to fetch temperature data.
+
+    Only current temperature is stored (no forecasts).
+
+    Temperature updates are triggered manually via an API endpoint.
+
+    SQLite is sufficient for the scope of this task; in production, PostgreSQL and Alembic migrations would be preferable.
+
+    No authentication or authorization is implemented, as it was not required by the task.
+
+Example Workflow
+
+    Create a city using POST /cities with name and coordinates.
+
+    Call POST /temperatures/update to fetch and store temperatures for all cities.
+
+    Retrieve temperature history using:
+
+        GET /temperatures
+
+        GET /temperatures?city_id=1
+
+Notes
+
+This project focuses on correctness, clarity, and best practices rather than production-ready infrastructure.
